@@ -16,8 +16,10 @@ import 'ViewModels/main_view_model.dart';
 import 'app/locator.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:hive/hive.dart';
-
+import 'package:firebase_core/firebase_core.dart';
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   await Hive.initFlutter();
   WidgetsFlutterBinding.ensureInitialized();
   await configure();

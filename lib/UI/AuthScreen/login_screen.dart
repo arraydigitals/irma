@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:flutter_svg/svg.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:imraapp/Utils/extensions.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:page_transition/page_transition.dart';
@@ -347,7 +349,15 @@ class _LoginState extends State<Login> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   InkWell(
-                                      onTap: () {},
+                                      onTap: () async {
+                                                try {
+          UserCredential userCredential = await signInWithGoogle();
+          print("Google Sign-In successful: ${userCredential.user}");
+        } catch (e) {
+          print("Error during Google Sign-In: $e");
+        }
+
+                                      },
                                       child: Image.asset(ImageUtils.google)),
                                   SizedBox(
                                     width: 8.w,
@@ -423,35 +433,65 @@ class _LoginState extends State<Login> {
             ),
           ),
         );
+
+
+        
       },
     );
+    
   }
-
-  Future<void> Biometrics() async {
+  Future<UserCredential> signInWithGoogle() async {
     try {
-      bool authenticated = await auth.authenticate(
-          localizedReason: 'biometics',
-          options: const AuthenticationOptions(
-              stickyAuth: true, biometricOnly: false));
-      Navigator.push(
-          context,
-          PageTransition(
-              type: PageTransitionType.fade, child: LocationsConfirmScreen()
-              //HomeBottombarNavScreen()
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
 
-              ));
-      print('Authenticated : $authenticated');
-    } on PlatformException catch (e) {
-      print(e);
-    }
-  }
+      if (googleUser == null) {
+        // The user canceled the sign-in process
+        throw FirebaseAuthException(
+          code: 'ERROR_ABORTED_BY_USER',
+          message: 'Sign-in process aborted by user.',
+        );
+      }
 
-  Future<void> _getAvailableBiometrics() async {
-    List<BiometricType> availableBiometrics =
-        await auth.getAvailableBiometrics();
-    print('list of availablebiometire: $availableBiometrics');
-    if (!mounted) {
-      return;
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      return await FirebaseAuth.instance.signInWithCredential(credential);
+    } catch (e) {
+      throw FirebaseAuthException(
+        code: 'ERROR_GOOGLE_SIGN_IN_FAILED',
+        message: 'Failed to sign in with Google: $e',
+      );
     }
   }
 }
+  // Future<void> Biometrics() async {
+  //   try {
+  //     bool authenticated = await auth.authenticate(
+  //         localizedReason: 'biometics',
+  //         options: const AuthenticationOptions(
+  //             stickyAuth: true, biometricOnly: false));
+  //     Navigator.push(
+  //         context,
+  //         PageTransition(
+  //             type: PageTransitionType.fade, child: LocationsConfirmScreen()
+  //             //HomeBottombarNavScreen()
+
+  //             ));
+  //     print('Authenticated : $authenticated');
+  //   } on PlatformException catch (e) {
+  //     print(e);
+  //   }
+  // }
+
+  // Future<void> _getAvailableBiometrics() async {
+  //   List<BiometricType> availableBiometrics =
+  //       await auth.getAvailableBiometrics();
+  //   print('list of availablebiometire: $availableBiometrics');
+  //   if (!mounted) {
+  //     return;
+  //   }
+  // }
+
